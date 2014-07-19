@@ -1,0 +1,3 @@
+module Sauerkraut
+  VERSION = "0.0.1"
+end
