@@ -1,4 +1,4 @@
-require "sauerkraut/version"
+require 'sauerkraut/version'
 require 'colorize'
 require 'pry'
 
@@ -16,49 +16,53 @@ module Sauerkraut
   def self.exit_with_help(message)
     display_help
     puts message.red
-    puts "\t(you specified " + "#{ARGV.join(" ")}".yellow + ")"
+    puts "\t(you specified " + "#{@args.join(" ")}".yellow + ")"
     exit
   end
 
   def self.get_output_file
-    ARGV[(ARGV.find_index "-o") + 1]
+    @args[(@args.find_index "-o") + 1]
   end
 
   def self.output_file?
     (
-      (ARGV.include? "-o") &&
-      (ARGV.last != "-o")
+      (@args.include? "-o") &&
+      (@args.last != "-o")
     )
   end
 
   def self.no_output_file_specified?
     (
-      (ARGV.include? "-o") &&
-      (ARGV.last == "-o")
+      (@args.include? "-o") &&
+      (@args.last == "-o")
     )
   end
 
   def self.no_feature_file?
-    ARGV.count == 0
+    @args.count == 0
   end
 
   def self.invalid_feature_file?
-    !(ARGV[0] =~ /\.feature(:\d+)?(:\d+)?/)
+    !(@args[0] =~ /\.feature(:\d+)?(:\d+)?/)
+  end
+
+  def self.feature_file_exists?
+    File.file? @args.first.split(":").first
   end
 
   def self.no_line_number?
-    !(ARGV[0].include? ":")
+    !(@args[0].include? ":")
   end
 
   def self.invalid_range?
     (
-      (ARGV[0] =~ /\.feature:\d+:/) &&
-      !(ARGV[0] =~ /\.feature(:\d+)(:\d+)/)
+      (@args[0] =~ /\.feature:\d+:/) &&
+      !(@args[0] =~ /\.feature(:\d+)(:\d+)/)
     )
   end
 
   def self.range?
-    ARGV[0] =~ /\.feature(:\d+)(:\d+)/
+    @args[0] =~ /\.feature(:\d+)(:\d+)/
   end
 
   def self.is_line_scenario?(line)
@@ -71,7 +75,7 @@ module Sauerkraut
   end
 
   def self.is_def?(line)
-    line.strip =~ /^def self./
+    line.strip =~ /^def /
   end
 
   def self.remove_first_word(line)
@@ -113,10 +117,12 @@ module Sauerkraut
     f.close
   end
 
-  def self.run
+  def self.run(args)
+    @args = args
 
     exit_with_help("must specify a feature file") if no_feature_file?
     exit_with_help("must specify a valid feature file") if invalid_feature_file?
+    exit_with_help("must specify an existing feature file") if !feature_file_exists?
     exit_with_help("must specify a line number") if no_line_number?
     exit_with_help("specify range with :N:M") if invalid_range?
 
@@ -125,9 +131,9 @@ module Sauerkraut
 
 
     # get feature file
-    feature_file = ARGV[0].split(":").first
-    line_number = ARGV[0].split(":")[1].to_i
-    range_number = range? ? (ARGV[0].split(":").last.to_i) : nil
+    feature_file = @args[0].split(":").first
+    line_number = @args[0].split(":")[1].to_i
+    range_number = range? ? (@args[0].split(":").last.to_i) : nil
     feature_file_array = IO.readlines feature_file
 
 

@@ -1,0 +1,55 @@
+#Given(/^([\w]+) slices of vegetables$/) do |vegetable_size|
+# block vars
+vegetable_size = "small"
+# |
+# V
+  @vegetable_slice_size = vegetable_size.to_sym
+
+#Given(/^a(nother)? layer of vegetables is placed in the jar$/) do |repeat|
+# block vars
+repeat = ""
+# |
+# V
+  @jar ||= []
+  put_vegetables_in_jar
+
+#Given(/^then (more )?salt is added$/) do |more|
+# block vars
+more = ""
+# |
+# V
+  @salt = 1
+  @salt += 1 if more
+
+#Given(/^a(nother)? layer of vegetables is placed in the jar$/) do |repeat|
+# block vars
+repeat = "nother"
+# |
+# V
+  @jar ||= []
+  put_vegetables_in_jar
+
+#Given(/^then (more )?salt is added$/) do |more|
+# block vars
+more = "more "
+# |
+# V
+  @salt = 1
+  @salt += 1 if more
+
+#Given(/^some garlic is chopped up$/) do
+  @garlic ||= :some
+  @garlic.to_s.chop
+
+#Given(/^garlic is layered into the jar$/) do
+  @jar << {:garlic => true}
+
+#Given(/^some more vegetables are placed into the jar$/) do
+  put_vegetables_in_jar
+
+#When(/^the jar is nearly full$/) do
+  @jar << {:nearly_full => true}
+
+#Then(/^a stone should be put on top$/) do
+  @jar << {:stone => true}
+
