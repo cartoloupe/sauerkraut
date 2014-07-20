@@ -24,7 +24,9 @@ On the command line:
 `sauerkraut FEATURE_FILE:N[:M] [-o FILE]`
 
 `:N` will gather source code from scenario found at `:N`
+
 `:N:M` will gather source code from the range `N-M` of the feature file
+
 `-o FILE` will output to a file instead of the terminal
 
 
