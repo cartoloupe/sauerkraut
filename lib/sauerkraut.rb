@@ -46,6 +46,10 @@ module Sauerkraut
     !(@args[0] =~ /\.feature(:\d+)?(:\d+)?/)
   end
 
+  def self.feature_file_exists?
+    File.file? @args.first.split(":").first
+  end
+
   def self.no_line_number?
     !(@args[0].include? ":")
   end
@@ -118,6 +122,7 @@ module Sauerkraut
 
     exit_with_help("must specify a feature file") if no_feature_file?
     exit_with_help("must specify a valid feature file") if invalid_feature_file?
+    exit_with_help("must specify an existing feature file") if !feature_file_exists?
     exit_with_help("must specify a line number") if no_line_number?
     exit_with_help("specify range with :N:M") if invalid_range?
 
