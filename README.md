@@ -1,6 +1,6 @@
 # Sauerkraut
 
-TODO: Write a gem description
+Gathers all cucumber step definition source code in one place, in order to refactor cucumber steps.
 
 ## Installation
 
@@ -20,7 +20,17 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+On the command line:
+`sauerkraut FEATURE_FILE:N[:M] [-o FILE]`
+
+`:N` will gather source code from scenario found at `:N`
+`:N:M` will gather source code from the range `N-M` of the feature file
+`-o FILE` will output to a file instead of the terminal
+
+
+## Warnings
+When `FEATURE_FILE:N` is a Scenario Outline, it probably won't work yet.
+
 
 ## Contributing
 
