@@ -1,6 +1,5 @@
 require 'sauerkraut/version'
 require 'colorize'
-require 'pry'
 
 module Sauerkraut
   # DEFAULT OPTIONS

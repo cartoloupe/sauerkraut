@@ -1,6 +1,7 @@
-# Sauerkraut
+# Sauerkraut         ![Build Status](https://travis-ci.org/cartoloupe/sauerkraut.svg?branch=master)
 
 Gathers all cucumber step definition source code in one place, in order to refactor cucumber steps.
+
 
 ## Installation
 
