@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["rubycoder@example.com"]
   spec.summary       = %q{Helps refactor cucumber steps.}
   spec.description   = %q{Gathers all step definition source code for a given scenario or range, and outputs it in one place.}
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/cartoloupe/sauerkraut"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
