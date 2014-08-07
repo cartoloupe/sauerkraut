@@ -129,7 +129,8 @@ module Sauerkraut
 
 
   def self.highlight_bvar!(bvar, line)
-    line.gsub!(/(\W)(#{bvar})(\W)/) {|m| "#{$1}" + "#{bvar}".magenta + "#{$3}"}
+    #line.gsub!(/([\W])(#{bvar})(\W)/) {|m| "#{$1}" + "#{bvar}".magenta + "#{$3}"}
+    line.gsub!(/([\[\(-\/=\\& :\+\-])(#{bvar})([^\w]|\z)/) {|m| "#{$1}" + "#{bvar}".magenta + "#{$3}"}
   end
 
   def self.run(args)
