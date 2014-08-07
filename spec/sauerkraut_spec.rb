@@ -8,6 +8,7 @@ describe "parsing" do
     expect {Sauerkraut.run "blah.feature".split}.to raise_error
     expect {Sauerkraut.run "blah.feature:39".split}.to raise_error
     expect {Sauerkraut.run "features/test.feature:39".split}.to raise_error
+    expect {Sauerkraut.run "features/test.feature".split}.to_not raise_error
     expect {Sauerkraut.run "features/test.feature:15".split}.to_not raise_error
     expect {Sauerkraut.run "features/test.feature:15:".split}.to raise_error
     expect {Sauerkraut.run "features/test.feature:15:17".split}.to_not raise_error
