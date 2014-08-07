@@ -6,7 +6,7 @@ module Sauerkraut
   @options = {
     :output => nil,
   }
-  @banner = "\nUsage: sauerkraut FEATURE_FILE:N[:M] [-o FILE]".cyan
+  @banner = "\nUsage: sauerkraut FEATURE_FILE[:N][:M] [-o FILE]".cyan
 
   def self.display_help
     puts @banner
@@ -116,13 +116,29 @@ module Sauerkraut
     f.close
   end
 
+
+  def self.colorize_output(output)
+    output.map! do |line|
+      if line =~ /^#/
+        line.chomp.cyan
+      else
+        line
+      end
+    end
+  end
+
+
+  def self.highlight_bvar!(bvar, line)
+    line.gsub!(/(\W)(#{bvar})(\W)/) {|m| "#{$1}" + "#{bvar}".magenta + "#{$3}"}
+  end
+
   def self.run(args)
     @args = args
 
+    # PARSING
     exit_with_help("must specify a feature file") if no_feature_file?
     exit_with_help("must specify a valid feature file") if invalid_feature_file?
     exit_with_help("must specify an existing feature file") if !feature_file_exists?
-    exit_with_help("must specify a line number") if no_line_number?
     exit_with_help("specify range with :N:M") if invalid_range?
 
     exit_with_help("must specify an output file") if no_output_file_specified?
@@ -130,42 +146,57 @@ module Sauerkraut
 
 
     # get feature file
-    feature_file = @args[0].split(":").first
-    line_number = @args[0].split(":")[1].to_i
-    range_number = range? ? (@args[0].split(":").last.to_i) : nil
+    if no_line_number?
+      feature_file = @args[0]
+      line_number = 0
+      range_number = nil
+    else
+      feature_file = @args[0].split(":").first
+      line_number = @args[0].split(":")[1].to_i
+      range_number = range? ? (@args[0].split(":").last.to_i) : nil
+    end
     feature_file_array = IO.readlines feature_file
 
 
 
 
-
-
-    # if one line, get scenario
-    if !range?
-      exit_with_help("specify a line number that is a scenario") if !is_line_scenario?(feature_file_array[line_number-1])
-      scenario = feature_file_array[line_number-1]
+    # if no lines, get entire file
+    if no_line_number?
       steps = []
-      feature_file_array[line_number..-1].each do |line|
-        break if is_line_scenario?(line)
-        steps << line.strip
-      end
-    end
-
-    # if two lines, gather given when thens
-    if range?
-      steps = []
-      feature_file_array[line_number..range_number].each do |line|
+      feature_file_array[0..-1].each do |line|
         next if is_line_scenario?(line)
         steps << line.strip
       end
+    else
+
+
+      # if one line, get scenario
+      if !range?
+        exit_with_help("specify a line number that is a scenario") if !is_line_scenario?(feature_file_array[line_number-1])
+        scenario = feature_file_array[line_number-1]
+        steps = []
+        feature_file_array[line_number..-1].each do |line|
+          break if is_line_scenario?(line)
+          steps << line.strip
+        end
+      end
+
+      # if two lines, gather given when thens
+      if range?
+        steps = []
+        feature_file_array[line_number..range_number].each do |line|
+          next if is_line_scenario?(line)
+          steps << line.strip
+        end
+      end
+
     end
 
 
     # get regexes
-    pattern = /(?:Given|When|Then|And).+\/(.*)\/.+/
+    pattern = /(?:Given|When|Then|And|But).+\/(.*)\/.+/
     pattern2 = /\/(.*)\//
     all_the_regexes = []
-    linenumber = 1
     stepfiles = File.join("**", "*steps.rb")
     Dir.glob(stepfiles) do |file|
       linenumber = 1
@@ -182,12 +213,17 @@ module Sauerkraut
 
     # use stepfinder to find sources
     # compute block variables
-    stepdeflocations = []
+    headlands = []
     steps.each do |step|
       next if !is_step_def?(step)
       all_the_regexes.each do |regexarr|
         if remove_first_word(step) =~ regexarr.first
-          stepdeflocations << {:step => step, :sourcefile => regexarr[1], :lineno => regexarr[2], :block_vars => remove_first_word(step).scan(regexarr[0]).flatten}
+          headlands << {
+            :step => step,
+            :sourcefile => regexarr[1],
+            :lineno => regexarr[2],
+            :block_vars => remove_first_word(step).scan(regexarr[0]).flatten,
+          }
         end
       end
     end
@@ -195,23 +231,23 @@ module Sauerkraut
 
 
     # get each code section from source
-    stepdeflocations.each do |stepdeflocation|
+    headlands.each do |headland|
 
       # get code block
-      code_barrel = IO.readlines stepdeflocation[:sourcefile]
-      stepdeflocation[:step_def] = code_barrel[stepdeflocation[:lineno]-1]
+      patch = IO.readlines headland[:sourcefile]
+      headland[:step_def] = patch[ headland[:lineno]-1]
 
       # get block variables
-      if has_block_variables?( code_barrel[stepdeflocation[:lineno]-1])
-        stepdeflocation[:block_var_names] = code_barrel[stepdeflocation[:lineno]-1].reverse.scan(/\|(.*?)\|/).flatten.first.reverse.split(",").map{|v| v.strip}
+      if has_block_variables?( patch[headland[:lineno]-1])
+        headland[:block_var_names] = patch[ headland[:lineno]-1].reverse.scan(/\|(.*?)\|/).flatten.first.reverse.split(",").map{|v| v.strip}
       else
-        stepdeflocation[:block_var_names] = nil
+        headland[:block_var_names] = nil
       end
 
       #step through until the next given when then,
       #  collecting the lines
       cabbage = []
-      code_barrel[stepdeflocation[:lineno]..-1].each do |line|
+      patch[ headland[:lineno]..-1].each do |line|
         break if (is_step_def?(line) || is_def?(line))
         cabbage << line
       end
@@ -231,7 +267,7 @@ module Sauerkraut
       end
       cabbage.reverse!
       array_trim(cabbage)
-      stepdeflocation[:cabbage] = cabbage
+      headland[:cabbage] = cabbage
 
     end
 
@@ -242,19 +278,36 @@ module Sauerkraut
     # display cabbages
 
     output = []
-    stepdeflocations.each do |stepdeflocation|
-      output <<  "#{encomment stepdeflocation[:step_def]}"
+    headlands.each do |headland|
+      output <<  "#{encomment headland[:step_def]}"
 
-      if stepdeflocation[:block_var_names]
-        output << "# block vars"
-        stepdeflocation[:block_var_names].each_with_index do |name,i|
-          output <<  "#{name} = #{enquote stepdeflocation[:block_vars][i]}"
+      if headland[:block_var_names]
+        output << "# block vars ------"
+        headland[:block_var_names].each_with_index do |name,i|
+          bvar = "#{name}"
+          bvar = bvar.magenta if !@options[:output]
+          line = bvar + " = #{enquote headland[ :block_vars][i]}"
+          output << line
         end
-        output << "# |"
-        output << "# V"
+        output << "# -----------------"
       end
 
-      output += stepdeflocation[:cabbage]
+      # search for block vars and highlight
+      if !@options[:output] && headland[:block_var_names]
+        cabbage = headland[:cabbage].map! do |line|
+          headland[:block_var_names].each do |bvar|
+            if line =~ /\W#{bvar}\W/
+              highlight_bvar!(bvar, line)
+            end
+          end
+          line
+        end
+      else
+        cabbage = headland[:cabbage]
+      end
+
+
+      output += cabbage
 
       output <<  "\n"
     end
@@ -267,7 +320,8 @@ module Sauerkraut
       write_array_to_file(output, @options[:output])
       puts "output written to #{@options[:output]}"
     else
-      puts output
+      puts colorize_output output
+      #puts output
     end
 
   end
