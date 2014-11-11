@@ -92,7 +92,7 @@ module Sauerkraut
   end
 
   def self.encomment(var)
-    "##{var}"
+    "# #{var}"
   end
 
   def self.enblank(var)
@@ -280,6 +280,7 @@ module Sauerkraut
 
     output = []
     headlands.each do |headland|
+      output <<  "#{encomment (headland[:sourcefile] + ":" + headland[:lineno].to_s)}"
       output <<  "#{encomment headland[:step_def]}"
 
       if headland[:block_var_names]
